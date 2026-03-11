@@ -1,0 +1,30 @@
+using UnityEngine;
+
+public class CarController : MonoBehaviour
+{
+    public float motorForce = 1500f;
+    public float steerForce = 30f;
+    public float nitroForce = 3000f;
+
+    public WheelCollider frontLeftWheel;
+    public WheelCollider frontRightWheel;
+    public WheelCollider rearLeftWheel;
+    public WheelCollider rearRightWheel;
+
+    void FixedUpdate()
+    {
+        float move = Input.GetAxis("Vertical") * motorForce;
+        float steer = Input.GetAxis("Horizontal") * steerForce;
+
+        if (Input.GetKey(KeyCode.LeftShift))
+        {
+            move = Input.GetAxis("Vertical") * nitroForce;
+        }
+
+        rearLeftWheel.motorTorque = move;
+        rearRightWheel.motorTorque = move;
+
+        frontLeftWheel.steerAngle = steer;
+        frontRightWheel.steerAngle = steer;
+    }
+}
