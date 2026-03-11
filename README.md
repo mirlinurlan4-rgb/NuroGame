@@ -1,59 +1,94 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>3D Car Game</title>
-<style>
-body { margin:0; overflow:hidden; }
-</style>
-</head>
-<body>
+using UnityEngine;
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+public class PlayerMovement : MonoBehaviour
+{
+    public CharacterController controller;
+    public float speed = 6f;
+    public float gravity = -9.81f;
+    public float jumpHeight = 3f;
 
-<script>
-let scene = new THREE.Scene();
-let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    Vector3 velocity;
+    bool isGrounded;
 
-let renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+    public Transform groundCheck;
+    public float groundDistance = 0.4f;
+    public LayerMask groundMask;
 
-// yol
-let roadGeometry = new THREE.PlaneGeometry(20,200);
-let roadMaterial = new THREE.MeshBasicMaterial({color:0x333333});
-let road = new THREE.Mesh(roadGeometry, roadMaterial);
-road.rotation.x = -Math.PI/2;
-scene.add(road);
+    void Update()
+    {
+        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
 
-// maşın
-let carGeometry = new THREE.BoxGeometry(2,1,4);
-let carMaterial = new THREE.MeshBasicMaterial({color:0xff0000});
-let car = new THREE.Mesh(carGeometry, carMaterial);
-car.position.y = 0.5;
-scene.add(car);
+        if(isGrounded && velocity.y < 0)
+        {
+            velocity.y = -2f;
+        }
 
-camera.position.z = 10;
-camera.position.y = 5;
-camera.rotation.x = -0.3;
+        float x = Input.GetAxis("Horizontal");
+        float z = Input.GetAxis("Vertical");
 
-let speed = 0.2;
+        Vector3 move = transform.right * x + transform.forward * z;
+        controller.Move(move * speed * Time.deltaTime);
 
-document.addEventListener("keydown", function(e){
-    if(e.key=="ArrowLeft") car.position.x -= 0.5;
-    if(e.key=="ArrowRight") car.position.x += 0.5;
-});
+        if(Input.GetButtonDown("Jump") && isGrounded)
+        {
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        }
 
-function animate(){
-requestAnimationFrame(animate);
+        velocity.y += gravity * Time.deltaTime;
+        controller.Move(velocity * Time.deltaTime);
+    }
+}using UnityEngine;
 
-road.position.z += speed;
-if(road.position.z > 50) road.position.z = 0;
+public class MouseLook : MonoBehaviour
+{
+    public float mouseSensitivity = 100f;
+    public Transform playerBody;
 
-renderer.render(scene, camera);
+    float xRotation = 0f;
+
+    void Start()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+    }
+
+    void Update()
+    {
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
+
+        xRotation -= mouseY;
+        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+
+        transform.localRotation = Quaternion.Euler(xRotation,0f,0f);
+        playerBody.Rotate(Vector3.up * mouseX);
+    }
+}using UnityEngine;
+
+public class GunSystem : MonoBehaviour
+{
+    public Camera fpsCam;
+    public float range = 100f;
+    public int damage = 25;
+
+    public ParticleSystem muzzleFlash;
+
+    void Update()
+    {
+        if(Input.GetButtonDown("Fire1"))
+        {
+            Shoot();
+        }
+    }
+
+    void Shoot()
+    {
+        muzzleFlash.Play();
+
+        RaycastHit hit;
+
+        if(Physics.Raycast(fpsCam.transform.position, fpsCam.transform.forward, out hit, range))
+        {
+            Debug.Log("Vuruldu: " + hit.transform.name);
+        }
+    }
 }
-
-animate();
-</script>
-
-</body>
-</html>
